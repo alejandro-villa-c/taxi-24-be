@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Driver } from './drivers.entity';
 import { CreateDriverDto } from './dtos/create-driver.dto';
 import { DriverDto } from './dtos/driver.dto';
+import { GisUtils } from '../../utils/gis.utils';
 
 @Injectable()
 export class DriversService {
@@ -38,9 +39,8 @@ export class DriversService {
     latitude: number,
     longitude: number,
   ): Promise<DriverDto[]> {
-    const earthRadiusKm = 6371;
-    const radiansLat = this.degreesToRadians(latitude);
-    const radiansLong = this.degreesToRadians(longitude);
+    const radiansLat = GisUtils.degreesToRadians(latitude);
+    const radiansLong = GisUtils.degreesToRadians(longitude);
 
     const driversWithinDistance = await this.driversRepository
       .createQueryBuilder('driver')
@@ -50,7 +50,7 @@ export class DriversService {
           SIN( RADIANS(driver.latitude) ) * SIN( ${radiansLat} ) +
           COS( RADIANS(driver.latitude) ) * COS( ${radiansLat} ) *
           COS( RADIANS(driver.longitude) - ${radiansLong} )
-        ) * ${earthRadiusKm} <= ${distance}`,
+        ) * ${GisUtils.earthRadiusKm} <= ${distance}`,
       )
       .getMany();
 
@@ -65,9 +65,5 @@ export class DriversService {
     });
 
     return driverDtos;
-  }
-
-  private degreesToRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
   }
 }

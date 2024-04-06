@@ -5,20 +5,20 @@ export class CreateDriverDto {
   @IsNotEmpty()
   @IsString()
   @ApiProperty()
-  givenName!: string;
+  public givenName!: string;
 
   @IsNotEmpty()
   @IsString()
   @ApiProperty()
-  familyName!: string;
+  public familyName!: string;
 
   @IsNotEmpty()
   @IsDecimal()
   @ApiProperty()
-  latitude!: string;
+  public latitude!: string;
 
   @IsNotEmpty()
   @IsDecimal()
   @ApiProperty()
-  longitude!: string;
+  public longitude!: string;
 }

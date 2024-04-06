@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { CreateDriverDto } from './dtos/create-driver.dto';
-import { HttpResponse } from '../../utils/http-response';
+import { HttpResponse } from '../../shared/http-response';
 import { DriverDto } from './dtos/driver.dto';
 import {
   ApiBadRequestResponse,
@@ -42,12 +42,13 @@ export class DriversController {
               type: 'object',
               $ref: getSchemaPath(DriverDto),
             },
-            errorMessage: {
-              type: 'string',
-            },
             statusCode: {
               type: 'number',
               default: 201,
+            },
+            errorMessage: {
+              type: 'string',
+              nullable: true,
             },
           },
         },
@@ -62,14 +63,15 @@ export class DriversController {
           properties: {
             data: {
               type: 'object',
-              $ref: getSchemaPath(DriverDto),
-            },
-            errorMessage: {
-              type: 'string',
+              nullable: true,
             },
             statusCode: {
               type: 'number',
               default: 400,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'Bad Request',
             },
           },
         },
@@ -84,15 +86,15 @@ export class DriversController {
           properties: {
             data: {
               type: 'object',
-              $ref: getSchemaPath(DriverDto),
-            },
-            errorMessage: {
-              type: 'string',
-              default: 'An unknown error occurred',
+              nullable: true,
             },
             statusCode: {
               type: 'number',
               default: 500,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'An unknown error occurred',
             },
           },
         },
@@ -105,11 +107,11 @@ export class DriversController {
     try {
       const createdDriverDto =
         await this.driversService.create(createDriverDto);
-      return new HttpResponse(createdDriverDto, undefined, 201);
+      return new HttpResponse(createdDriverDto, 201);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(undefined, errorMessage, 500);
+      return new HttpResponse(undefined, 500, errorMessage);
     }
   }
 
@@ -126,12 +128,36 @@ export class DriversController {
               type: 'array',
               items: { $ref: getSchemaPath(DriverDto) },
             },
-            errorMessage: {
-              type: 'string',
-            },
             statusCode: {
               type: 'number',
               default: 200,
+            },
+            errorMessage: {
+              type: 'string',
+              nullable: true,
+            },
+          },
+        },
+      ],
+    },
+  })
+  @ApiBadRequestResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'array',
+              nullable: true,
+            },
+            statusCode: {
+              type: 'number',
+              default: 400,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'Bad Request',
             },
           },
         },
@@ -146,15 +172,15 @@ export class DriversController {
           properties: {
             data: {
               type: 'array',
-              items: { $ref: getSchemaPath(DriverDto) },
-            },
-            errorMessage: {
-              type: 'string',
-              default: 'An unknown error occurred',
+              nullable: true,
             },
             statusCode: {
               type: 'number',
               default: 500,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'An unknown error occurred',
             },
           },
         },
@@ -172,11 +198,11 @@ export class DriversController {
         latitude,
         longitude,
       );
-      return new HttpResponse(drivers, undefined, 200);
+      return new HttpResponse(drivers, 200);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(undefined, errorMessage, 500);
+      return new HttpResponse(undefined, 500, errorMessage);
     }
   }
 }

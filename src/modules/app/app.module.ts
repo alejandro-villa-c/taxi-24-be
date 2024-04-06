@@ -4,9 +4,15 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '../../config/database/database.module';
 import { DriversModule } from '../drivers/drivers.module';
+import { PassengersModule } from '../passengers/passengers.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), DatabaseModule.forRoot(), DriversModule],
+  imports: [
+    ConfigModule.forRoot(),
+    DatabaseModule.forRoot(),
+    DriversModule,
+    PassengersModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

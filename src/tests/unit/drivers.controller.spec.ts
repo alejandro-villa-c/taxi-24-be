@@ -3,13 +3,13 @@ import { DriversController } from '../../modules/drivers/drivers.controller';
 import { DriversService } from '../../modules/drivers/drivers.service';
 import { CreateDriverDto } from '../../modules/drivers/dtos/create-driver.dto';
 import { DriverDto } from '../../modules/drivers/dtos/driver.dto';
-import { HttpResponse } from '../../utils/http-response';
+import { HttpResponse } from '../../shared/http-response';
 import { generateRandomCreateDriverDto } from '../mocks/drivers/drivers.mock';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Driver } from '../../modules/drivers/drivers.entity';
 import { DriversRepositoryMock } from '../mocks/drivers/drivers-repository.mock';
 import { faker } from '@faker-js/faker';
-import { getDistance } from 'geolib';
+import { GisUtils } from '../../utils/gis.utils';
 
 describe('DriversController', () => {
   let controller: DriversController;
@@ -118,13 +118,12 @@ describe('DriversController', () => {
             return Promise.resolve(
               mockDrivers.filter((mockDriver) => {
                 const mockDriverDistance =
-                  getDistance(
-                    { latitude: latitude, longitude: longitude },
-                    {
-                      latitude: mockDriver.latitude,
-                      longitude: mockDriver.longitude,
-                    },
-                  ) / 1000;
+                  GisUtils.getDistanceBetweenCoordinatesInKm(
+                    latitude,
+                    longitude,
+                    mockDriver.latitude,
+                    mockDriver.longitude,
+                  );
                 return mockDriverDistance <= distance;
               }),
             );

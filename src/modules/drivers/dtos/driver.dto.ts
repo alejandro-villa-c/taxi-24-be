@@ -2,19 +2,19 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class DriverDto {
   @ApiProperty()
-  id: number;
+  public id: number;
 
   @ApiProperty()
-  givenName: string;
+  public givenName: string;
 
   @ApiProperty()
-  familyName: string;
+  public familyName: string;
 
   @ApiProperty()
-  latitude: number;
+  public latitude: number;
 
   @ApiProperty()
-  longitude: number;
+  public longitude: number;
 
   constructor(
     id: number,

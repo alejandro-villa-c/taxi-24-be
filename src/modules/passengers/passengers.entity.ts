@@ -7,8 +7,8 @@ import {
 } from 'typeorm';
 import { Trip } from '../trips/trips.entity';
 
-@Entity('drivers')
-export class Driver {
+@Entity('passengers')
+export class Passenger {
   @PrimaryGeneratedColumn()
   public id!: number;
 
@@ -18,12 +18,6 @@ export class Driver {
   @Column()
   public familyName!: string;
 
-  @Column('decimal', { precision: 10, scale: 7 })
-  public latitude!: number;
-
-  @Column('decimal', { precision: 10, scale: 7 })
-  public longitude!: number;
-
-  @OneToMany(() => Trip, (trip) => trip.driver)
+  @OneToMany(() => Trip, (trip) => trip.passenger)
   public trips?: Relation<Trip[]>;
 }

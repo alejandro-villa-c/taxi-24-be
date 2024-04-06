@@ -2,17 +2,17 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class HttpResponse<T> {
   @ApiProperty()
-  data: T;
+  public data: T;
 
   @ApiProperty()
-  errorMessage?: string;
+  public statusCode: number;
 
   @ApiProperty()
-  statusCode: number;
+  public errorMessage?: string;
 
-  constructor(data: T, errorMessage?: string, statusCode: number = 200) {
+  constructor(data: T, statusCode: number, errorMessage?: string) {
     this.data = data;
-    this.errorMessage = errorMessage;
     this.statusCode = statusCode;
+    this.errorMessage = errorMessage;
   }
 }
