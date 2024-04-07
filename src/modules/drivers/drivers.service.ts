@@ -5,6 +5,7 @@ import { Driver } from './drivers.entity';
 import { CreateDriverDto } from './dtos/create-driver.dto';
 import { DriverDto } from './dtos/driver.dto';
 import { GisUtils } from '../../utils/gis.utils';
+import { PaginatedResponse } from '../../shared/paginated-response';
 
 @Injectable()
 export class DriversService {
@@ -32,6 +33,51 @@ export class DriversService {
     );
 
     return driverDto;
+  }
+
+  public async findAll(
+    page?: number,
+    perPage?: number,
+  ): Promise<PaginatedResponse<DriverDto[]>> {
+    let records: Driver[];
+    let totalRecords: number;
+    if (page && perPage) {
+      [records, totalRecords] = await this.driversRepository.findAndCount({
+        skip: (page - 1) * perPage,
+        take: perPage,
+      });
+    } else {
+      records = await this.driversRepository.find();
+      totalRecords = records.length;
+    }
+    const driverDtos = records.map((record) => {
+      return new DriverDto(
+        record.id,
+        record.givenName,
+        record.familyName,
+        record.latitude,
+        record.longitude,
+      );
+    });
+    return { records: driverDtos, totalRecords };
+  }
+
+  public async findById(id: number): Promise<DriverDto | undefined> {
+    const driver = await this.driversRepository.findOne({
+      where: {
+        id,
+      },
+    });
+    if (!driver) {
+      return undefined;
+    }
+    return new DriverDto(
+      driver.id,
+      driver.givenName,
+      driver.familyName,
+      driver.latitude,
+      driver.longitude,
+    );
   }
 
   public async findDriversWithinDistance(

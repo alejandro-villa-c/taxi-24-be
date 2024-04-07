@@ -6,6 +6,12 @@ export class DriversRepositoryMock extends Repository<Driver> {
     return driver;
   }
 
+  public findAndCount = jest.fn().mockResolvedValue([[], 0]);
+
+  public find = jest.fn().mockResolvedValue([]);
+
+  public findOne = jest.fn().mockResolvedValue(undefined);
+
   public createQueryBuilder(): any {
     return {
       select: jest.fn().mockReturnThis(),

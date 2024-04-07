@@ -4,7 +4,7 @@ import { DriversService } from '../../modules/drivers/drivers.service';
 import { CreateDriverDto } from '../../modules/drivers/dtos/create-driver.dto';
 import { DriverDto } from '../../modules/drivers/dtos/driver.dto';
 import { HttpResponse } from '../../shared/http-response';
-import { generateRandomCreateDriverDto } from '../mocks/drivers/drivers.mock';
+import { DriversMock } from '../mocks/drivers/drivers.mock';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Driver } from '../../modules/drivers/drivers.entity';
 import { DriversRepositoryMock } from '../mocks/drivers/drivers-repository.mock';
@@ -33,7 +33,7 @@ describe('DriversController', () => {
 
   describe('create', () => {
     it('should create a new driver', async () => {
-      const randomDriverDto = generateRandomCreateDriverDto();
+      const randomDriverDto = DriversMock.generateRandomCreateDriverDto();
       const createDriverDto: CreateDriverDto = randomDriverDto;
       const driverDto: DriverDto = {
         ...randomDriverDto,
@@ -53,12 +53,91 @@ describe('DriversController', () => {
     });
 
     it('should handle errors during driver creation', async () => {
-      const createDriverDto: CreateDriverDto = generateRandomCreateDriverDto();
+      const createDriverDto: CreateDriverDto =
+        DriversMock.generateRandomCreateDriverDto();
 
       const errorMessage = 'An error occurred';
       jest.spyOn(service, 'create').mockRejectedValue(new Error(errorMessage));
 
       const result = await controller.create(createDriverDto);
+
+      expect(result).toBeInstanceOf(HttpResponse);
+      expect(result.statusCode).toEqual(500);
+      expect(result.data).toBeUndefined();
+      expect(result.errorMessage).toEqual(errorMessage);
+    });
+  });
+
+  describe('getAll', () => {
+    it('should return all drivers', async () => {
+      const mockDrivers: DriverDto[] = [DriversMock.generateRandomDriverDto()];
+
+      jest.spyOn(service, 'findAll').mockResolvedValue({
+        records: mockDrivers,
+        totalRecords: mockDrivers.length,
+      });
+
+      const result = await controller.getAll();
+
+      expect(result).toBeInstanceOf(HttpResponse);
+      expect(result.statusCode).toEqual(200);
+      expect(result.data).toEqual({
+        records: mockDrivers,
+        totalRecords: mockDrivers.length,
+      });
+      expect(result.errorMessage).toBeUndefined();
+    });
+
+    it('should handle errors during retrieval', async () => {
+      const errorMessage = 'An unknown error occurred';
+      jest.spyOn(service, 'findAll').mockRejectedValue(new Error(errorMessage));
+
+      const result = await controller.getAll();
+
+      expect(result).toBeInstanceOf(HttpResponse);
+      expect(result.statusCode).toEqual(500);
+      expect(result.data).toBeUndefined();
+      expect(result.errorMessage).toEqual(errorMessage);
+    });
+  });
+
+  describe('getById', () => {
+    it('should return a driver by id', async () => {
+      const driverId = faker.number.int();
+      const mockDriver: DriverDto =
+        DriversMock.generateRandomDriverDtoWithSpecificId(driverId);
+
+      jest.spyOn(service, 'findById').mockResolvedValue(mockDriver);
+
+      const result = await controller.getById(driverId);
+
+      expect(result).toBeInstanceOf(HttpResponse);
+      expect(result.statusCode).toEqual(200);
+      expect(result.data).toEqual(mockDriver);
+      expect(result.errorMessage).toBeUndefined();
+    });
+
+    it('should handle a not found driver', async () => {
+      const driverId = faker.number.int();
+      const errorMessage = 'Driver not found';
+      jest.spyOn(service, 'findById').mockResolvedValue(undefined);
+
+      const result = await controller.getById(driverId);
+
+      expect(result).toBeInstanceOf(HttpResponse);
+      expect(result.statusCode).toEqual(404);
+      expect(result.data).toBeUndefined();
+      expect(result.errorMessage).toEqual(errorMessage);
+    });
+
+    it('should handle errors during retrieval', async () => {
+      const driverId = faker.number.int();
+      const errorMessage = 'An unknown error occurred';
+      jest
+        .spyOn(service, 'findById')
+        .mockRejectedValue(new Error(errorMessage));
+
+      const result = await controller.getById(driverId);
 
       expect(result).toBeInstanceOf(HttpResponse);
       expect(result.statusCode).toEqual(500);

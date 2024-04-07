@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../modules/app/app.module';
 import * as request from 'supertest';
-import { generateRandomCreatePassengerDto } from '../mocks/passengers/passengers.mock';
+import { PassengersMock } from '../mocks/passengers/passengers.mock';
 import { PassengerDto } from '../../modules/passengers/dtos/passenger.dto';
 import { CreatePassengerDto } from '../../modules/passengers/dtos/create-passenger.dto';
 
@@ -19,7 +19,8 @@ describe('PassengersController (E2E)', () => {
   });
 
   it('/passengers (POST) - should create a new passenger', async () => {
-    const createPassengerDto = generateRandomCreatePassengerDto();
+    const createPassengerDto =
+      PassengersMock.generateRandomCreatePassengerDto();
 
     const response = await request(app.getHttpServer())
       .post('/passengers')
@@ -66,7 +67,7 @@ describe('PassengersController (E2E)', () => {
 
 async function createPassenger(app: INestApplication): Promise<PassengerDto> {
   const createPassengerDto: CreatePassengerDto =
-    generateRandomCreatePassengerDto();
+    PassengersMock.generateRandomCreatePassengerDto();
 
   const response = await request(app.getHttpServer())
     .post('/passengers')

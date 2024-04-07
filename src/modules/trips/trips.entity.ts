@@ -31,22 +31,53 @@ export class Trip {
   })
   public isActive!: boolean;
 
-  @Column('decimal', { precision: 10, scale: 7 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 7,
+    transformer: {
+      to: (value: number) => String(value),
+      from: (value: string) => Number(value),
+    },
+  })
   public startLatitude!: number;
 
-  @Column('decimal', { precision: 10, scale: 7 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 7,
+    transformer: {
+      to: (value: number) => String(value),
+      from: (value: string) => Number(value),
+    },
+  })
   public startLongitude!: number;
 
-  @Column('decimal', { precision: 10, scale: 7 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 7,
+    transformer: {
+      to: (value: number) => String(value),
+      from: (value: string) => Number(value),
+    },
+  })
   public endLatitude!: number;
 
-  @Column('decimal', { precision: 10, scale: 7 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 7,
+    transformer: {
+      to: (value: number) => String(value),
+      from: (value: string) => Number(value),
+    },
+  })
   public endLongitude!: number;
 
-  @Column({
-    type: 'decimal',
+  @Column('decimal', {
     precision: 10,
     scale: 2,
+    transformer: {
+      to: (value: number) => String(value),
+      from: (value: string) => Number(value),
+    },
   })
   public price!: number;
 

@@ -8,11 +8,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Passenger } from '../../modules/passengers/passengers.entity';
 import { PassengersRepositoryMock } from '../mocks/passengers/passengers-repository.mock';
 import { faker } from '@faker-js/faker';
-import {
-  generateRandomCreatePassengerDto,
-  generateRandomPassengerDto,
-  generateRandomPassengerDtoWithSpecificId,
-} from '../mocks/passengers/passengers.mock';
+import { PassengersMock } from '../mocks/passengers/passengers.mock';
 
 describe('PassengersController', () => {
   let controller: PassengersController;
@@ -36,7 +32,8 @@ describe('PassengersController', () => {
 
   describe('create', () => {
     it('should create a new passenger', async () => {
-      const randomPassengerDto = generateRandomCreatePassengerDto();
+      const randomPassengerDto =
+        PassengersMock.generateRandomCreatePassengerDto();
       const createPassengerDto: CreatePassengerDto = randomPassengerDto;
       const passengerDto: PassengerDto = {
         ...randomPassengerDto,
@@ -55,7 +52,7 @@ describe('PassengersController', () => {
 
     it('should handle errors during passenger creation', async () => {
       const createPassengerDto: CreatePassengerDto =
-        generateRandomCreatePassengerDto();
+        PassengersMock.generateRandomCreatePassengerDto();
 
       const errorMessage = 'An error occurred';
       jest.spyOn(service, 'create').mockRejectedValue(new Error(errorMessage));
@@ -71,7 +68,9 @@ describe('PassengersController', () => {
 
   describe('getAll', () => {
     it('should return all passengers', async () => {
-      const mockPassengers: PassengerDto[] = [generateRandomPassengerDto()];
+      const mockPassengers: PassengerDto[] = [
+        PassengersMock.generateRandomPassengerDto(),
+      ];
 
       jest.spyOn(service, 'findAll').mockResolvedValue({
         records: mockPassengers,
@@ -106,7 +105,7 @@ describe('PassengersController', () => {
     it('should return a passenger by id', async () => {
       const passengerId = faker.number.int();
       const mockPassenger: PassengerDto =
-        generateRandomPassengerDtoWithSpecificId(passengerId);
+        PassengersMock.generateRandomPassengerDtoWithSpecificId(passengerId);
 
       jest.spyOn(service, 'findById').mockResolvedValue(mockPassenger);
 

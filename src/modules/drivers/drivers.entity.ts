@@ -18,10 +18,24 @@ export class Driver {
   @Column()
   public familyName!: string;
 
-  @Column('decimal', { precision: 10, scale: 7 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 7,
+    transformer: {
+      to: (value: number) => String(value),
+      from: (value: string) => Number(value),
+    },
+  })
   public latitude!: number;
 
-  @Column('decimal', { precision: 10, scale: 7 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 7,
+    transformer: {
+      to: (value: number) => String(value),
+      from: (value: string) => Number(value),
+    },
+  })
   public longitude!: number;
 
   @OneToMany(() => Trip, (trip) => trip.driver)

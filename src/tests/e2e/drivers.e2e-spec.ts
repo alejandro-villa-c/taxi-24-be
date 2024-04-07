@@ -2,10 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../modules/app/app.module';
 import * as request from 'supertest';
-import {
-  generateCreateDriverDtoWithSpecificCoordinates,
-  generateRandomCreateDriverDto,
-} from '../mocks/drivers/drivers.mock';
+import { DriversMock } from '../mocks/drivers/drivers.mock';
 import { DriverDto } from '../../modules/drivers/dtos/driver.dto';
 import { CreateDriverDto } from '../../modules/drivers/dtos/create-driver.dto';
 
@@ -22,7 +19,7 @@ describe('DriversController (E2E)', () => {
   });
 
   it('/drivers (POST) - should create a new driver', async () => {
-    const createDriverDto = generateRandomCreateDriverDto();
+    const createDriverDto = DriversMock.generateRandomCreateDriverDto();
 
     const response = await request(app.getHttpServer())
       .post('/drivers')
@@ -40,6 +37,32 @@ describe('DriversController (E2E)', () => {
     );
   });
 
+  it('/drivers/:id (GET) - should return a specific driver', async () => {
+    const createdDriver: DriverDto = await createDriver(app);
+
+    const response = await request(app.getHttpServer())
+      .get(`/drivers/${createdDriver.id}`)
+      .expect(200);
+
+    expect(response.body.data).toBeDefined();
+    expect(response.body.data.id).toEqual(createdDriver.id);
+    expect(response.body.data.givenName).toEqual(createdDriver.givenName);
+    expect(response.body.data.familyName).toEqual(createdDriver.familyName);
+  });
+
+  it('/drivers (GET) - should return a list of drivers', async () => {
+    const driver1: DriverDto = await createDriver(app);
+    const driver2: DriverDto = await createDriver(app);
+
+    const response = await request(app.getHttpServer())
+      .get('/drivers')
+      .expect(200);
+
+    expect(Array.isArray(response.body.data.records)).toBe(true);
+    expect(response.body.data.records).toContainEqual(driver1);
+    expect(response.body.data.records).toContainEqual(driver2);
+  });
+
   it('/drivers/within/:distance/km (GET) - should return drivers within the specified distance', async () => {
     const distance = 3;
     const latitudeWithin = 1.23;
@@ -47,12 +70,12 @@ describe('DriversController (E2E)', () => {
     const latitudeOutside = 10.0;
     const longitudeOutside = 20.0;
 
-    const driverWithin = await createDriver(
+    const driverWithin = await createDriverWithSpecificCoordinates(
       app,
       latitudeWithin,
       longitudeWithin,
     );
-    const driverOutside = await createDriver(
+    const driverOutside = await createDriverWithSpecificCoordinates(
       app,
       latitudeOutside,
       longitudeOutside,
@@ -81,13 +104,28 @@ describe('DriversController (E2E)', () => {
   });
 });
 
-async function createDriver(
+async function createDriver(app: INestApplication): Promise<DriverDto> {
+  const createDriverDto: CreateDriverDto =
+    DriversMock.generateRandomCreateDriverDto();
+
+  const response = await request(app.getHttpServer())
+    .post('/drivers')
+    .send(createDriverDto)
+    .expect(201);
+
+  return response.body.data;
+}
+
+async function createDriverWithSpecificCoordinates(
   app: INestApplication,
   latitude: number,
   longitude: number,
 ): Promise<DriverDto> {
   const createDriverDto: CreateDriverDto =
-    generateCreateDriverDtoWithSpecificCoordinates(latitude, longitude);
+    DriversMock.generateRandomCreateDriverDtoWithSpecificCoordinates(
+      latitude,
+      longitude,
+    );
 
   const response = await request(app.getHttpServer())
     .post('/drivers')
