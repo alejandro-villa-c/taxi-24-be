@@ -1,23 +1,23 @@
 import {
   Controller,
-  Get,
-  Query,
-  ParseFloatPipe,
-  Param,
-  ParseIntPipe,
   Post,
   Body,
-  ValidationPipe,
   HttpCode,
-  UsePipes,
+  ValidationPipe,
+  Param,
   HttpStatus,
+  ConflictException,
+  Get,
+  Query,
+  NotFoundException,
 } from '@nestjs/common';
-import { DriversService } from './drivers.service';
-import { CreateDriverDto } from './dtos/create-driver.dto';
+import { TripsService } from './trips.service';
+import { CreateTripDto } from './dtos/create-trip.dto';
 import { HttpResponse } from '../../shared/http-response';
-import { DriverDto } from './dtos/driver.dto';
+import { TripDto } from './dtos/trip.dto';
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiExtraModels,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
@@ -28,11 +28,11 @@ import {
 } from '@nestjs/swagger';
 import { PaginatedResponse } from '../../shared/paginated-response';
 
-@ApiTags('Drivers')
-@ApiExtraModels(HttpResponse, PaginatedResponse, DriverDto)
-@Controller('drivers')
-export class DriversController {
-  constructor(private readonly driversService: DriversService) {}
+@ApiTags('Trips')
+@ApiExtraModels(HttpResponse, PaginatedResponse, TripDto)
+@Controller('trips')
+export class TripsController {
+  constructor(private readonly tripsService: TripsService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -44,7 +44,7 @@ export class DriversController {
           properties: {
             data: {
               type: 'object',
-              $ref: getSchemaPath(DriverDto),
+              $ref: getSchemaPath(TripDto),
             },
             statusCode: {
               type: 'number',
@@ -82,6 +82,29 @@ export class DriversController {
       ],
     },
   })
+  @ApiConflictResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'object',
+              nullable: true,
+            },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.BAD_REQUEST,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'Driver or passenger already has an active trip',
+            },
+          },
+        },
+      ],
+    },
+  })
   @ApiInternalServerErrorResponse({
     schema: {
       allOf: [
@@ -106,24 +129,119 @@ export class DriversController {
     },
   })
   public async create(
-    @Body(new ValidationPipe()) createDriverDto: CreateDriverDto,
-  ): Promise<HttpResponse<DriverDto | undefined>> {
+    @Body(new ValidationPipe()) createTripDto: CreateTripDto,
+  ): Promise<HttpResponse<TripDto | undefined>> {
     try {
-      const createdDriverDto =
-        await this.driversService.create(createDriverDto);
-      return new HttpResponse(createdDriverDto, HttpStatus.CREATED);
+      const createdTripDto = await this.tripsService.create(createTripDto);
+      return new HttpResponse(createdTripDto, HttpStatus.CREATED);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(
-        undefined,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        errorMessage,
-      );
+      if (error instanceof ConflictException) {
+        return new HttpResponse(undefined, HttpStatus.CONFLICT, error.message);
+      } else {
+        const errorMessage =
+          error instanceof Error ? error.message : 'An unknown error occurred';
+        return new HttpResponse(
+          undefined,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          errorMessage,
+        );
+      }
     }
   }
 
-  @Get()
+  @Post(':id/complete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'object',
+              $ref: getSchemaPath(TripDto),
+            },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.OK,
+            },
+            errorMessage: {
+              type: 'string',
+              nullable: true,
+            },
+          },
+        },
+      ],
+    },
+  })
+  @ApiNotFoundResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'object',
+              nullable: true,
+            },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.NOT_FOUND,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'Trip not found',
+            },
+          },
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'object',
+              nullable: true,
+            },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.INTERNAL_SERVER_ERROR,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'An unknown error occurred',
+            },
+          },
+        },
+      ],
+    },
+  })
+  public async completeTrip(
+    @Param('id') id: number,
+  ): Promise<HttpResponse<TripDto | undefined>> {
+    try {
+      const createdTripDto = await this.tripsService.completeTrip(id);
+      return new HttpResponse(createdTripDto, HttpStatus.OK);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return new HttpResponse(undefined, HttpStatus.NOT_FOUND, error.message);
+      } else {
+        const errorMessage =
+          error instanceof Error ? error.message : 'An unknown error occurred';
+        return new HttpResponse(
+          undefined,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          errorMessage,
+        );
+      }
+    }
+  }
+
+  @Get('active')
   @HttpCode(HttpStatus.OK)
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
@@ -139,7 +257,7 @@ export class DriversController {
               properties: {
                 records: {
                   type: 'array',
-                  items: { $ref: getSchemaPath(DriverDto) },
+                  items: { $ref: getSchemaPath(TripDto) },
                 },
                 totalRecords: {
                   type: 'number',
@@ -205,187 +323,20 @@ export class DriversController {
       ],
     },
   })
-  public async getAll(
+  public async getAllActiveTrips(
     @Query('page') page?: string,
     @Query('perPage') perPage?: string,
-  ): Promise<HttpResponse<PaginatedResponse<DriverDto[]> | undefined>> {
+  ): Promise<HttpResponse<PaginatedResponse<TripDto[]> | undefined>> {
     try {
       const parsedPage = page ? parseInt(page, 10) : undefined;
       const parsedPerPage = perPage ? parseInt(perPage, 10) : undefined;
 
-      const paginatedResponse: PaginatedResponse<DriverDto[]> =
-        await this.driversService.findAll(parsedPage, parsedPerPage);
+      const paginatedResponse = await this.tripsService.findActiveTrips(
+        parsedPage,
+        parsedPerPage,
+      );
 
       return new HttpResponse(paginatedResponse, HttpStatus.OK);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(
-        undefined,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        errorMessage,
-      );
-    }
-  }
-
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: { $ref: getSchemaPath(DriverDto) },
-            statusCode: { type: 'number', default: HttpStatus.OK },
-            errorMessage: { type: 'string', nullable: true },
-          },
-        },
-      ],
-    },
-  })
-  @ApiNotFoundResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: { type: 'object', nullable: true },
-            statusCode: { type: 'number', default: HttpStatus.NOT_FOUND },
-            errorMessage: { type: 'string', default: 'Driver not found' },
-          },
-        },
-      ],
-    },
-  })
-  @ApiInternalServerErrorResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: { type: 'object', nullable: true },
-            statusCode: {
-              type: 'number',
-              default: HttpStatus.INTERNAL_SERVER_ERROR,
-            },
-            errorMessage: {
-              type: 'string',
-              default: 'An unknown error occurred',
-            },
-          },
-        },
-      ],
-    },
-  })
-  public async getById(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<HttpResponse<DriverDto | undefined>> {
-    try {
-      const driver = await this.driversService.findById(id);
-      if (!driver) {
-        return new HttpResponse(
-          undefined,
-          HttpStatus.NOT_FOUND,
-          'Driver not found',
-        );
-      }
-      return new HttpResponse(driver, HttpStatus.OK);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(
-        undefined,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        errorMessage,
-      );
-    }
-  }
-
-  @Get('/within/:distance/km')
-  @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ transform: true }))
-  @ApiOkResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: {
-              type: 'array',
-              items: { $ref: getSchemaPath(DriverDto) },
-            },
-            statusCode: {
-              type: 'number',
-              default: HttpStatus.OK,
-            },
-            errorMessage: {
-              type: 'string',
-              nullable: true,
-            },
-          },
-        },
-      ],
-    },
-  })
-  @ApiBadRequestResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: {
-              type: 'array',
-              nullable: true,
-            },
-            statusCode: {
-              type: 'number',
-              default: HttpStatus.BAD_REQUEST,
-            },
-            errorMessage: {
-              type: 'string',
-              default: 'Bad Request',
-            },
-          },
-        },
-      ],
-    },
-  })
-  @ApiInternalServerErrorResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: {
-              type: 'array',
-              nullable: true,
-            },
-            statusCode: {
-              type: 'number',
-              default: HttpStatus.INTERNAL_SERVER_ERROR,
-            },
-            errorMessage: {
-              type: 'string',
-              default: 'An unknown error occurred',
-            },
-          },
-        },
-      ],
-    },
-  })
-  public async getDriversWithinDistance(
-    @Param('distance', ParseIntPipe) distance: number,
-    @Query('latitude', ParseFloatPipe) latitude: number,
-    @Query('longitude', ParseFloatPipe) longitude: number,
-  ): Promise<HttpResponse<DriverDto[] | undefined>> {
-    try {
-      const drivers = await this.driversService.findDriversWithinDistance(
-        distance,
-        latitude,
-        longitude,
-      );
-      return new HttpResponse(drivers, HttpStatus.OK);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred';

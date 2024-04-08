@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { AppModule } from '../../modules/app/app.module';
 import * as request from 'supertest';
 import { PassengersMock } from '../mocks/passengers/passengers.mock';
 import { PassengerDto } from '../../modules/passengers/dtos/passenger.dto';
-import { CreatePassengerDto } from '../../modules/passengers/dtos/create-passenger.dto';
+import { EntityCreationHelpers } from '../helpers/entity-creation.helpers';
 
 describe('PassengersController (E2E)', () => {
   let app: INestApplication;
@@ -25,7 +25,7 @@ describe('PassengersController (E2E)', () => {
     const response = await request(app.getHttpServer())
       .post('/passengers')
       .send(createPassengerDto)
-      .expect(201);
+      .expect(HttpStatus.CREATED);
 
     expect(response.body.data).toHaveProperty('id');
     expect(response.body.data.givenName).toEqual(createPassengerDto.givenName);
@@ -35,11 +35,12 @@ describe('PassengersController (E2E)', () => {
   });
 
   it('/passengers/:id (GET) - should return a specific passenger', async () => {
-    const createdPassenger: PassengerDto = await createPassenger(app);
+    const createdPassenger: PassengerDto =
+      await EntityCreationHelpers.createPassenger(app);
 
     const response = await request(app.getHttpServer())
       .get(`/passengers/${createdPassenger.id}`)
-      .expect(200);
+      .expect(HttpStatus.OK);
 
     expect(response.body.data).toBeDefined();
     expect(response.body.data.id).toEqual(createdPassenger.id);
@@ -48,12 +49,14 @@ describe('PassengersController (E2E)', () => {
   });
 
   it('/passengers (GET) - should return a list of passengers', async () => {
-    const passenger1: PassengerDto = await createPassenger(app);
-    const passenger2: PassengerDto = await createPassenger(app);
+    const passenger1: PassengerDto =
+      await EntityCreationHelpers.createPassenger(app);
+    const passenger2: PassengerDto =
+      await EntityCreationHelpers.createPassenger(app);
 
     const response = await request(app.getHttpServer())
       .get('/passengers')
-      .expect(200);
+      .expect(HttpStatus.OK);
 
     expect(Array.isArray(response.body.data.records)).toBe(true);
     expect(response.body.data.records).toContainEqual(passenger1);
@@ -64,15 +67,3 @@ describe('PassengersController (E2E)', () => {
     await app.close();
   });
 });
-
-async function createPassenger(app: INestApplication): Promise<PassengerDto> {
-  const createPassengerDto: CreatePassengerDto =
-    PassengersMock.generateRandomCreatePassengerDto();
-
-  const response = await request(app.getHttpServer())
-    .post('/passengers')
-    .send(createPassengerDto)
-    .expect(201);
-
-  return response.body.data;
-}

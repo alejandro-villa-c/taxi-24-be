@@ -5,6 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   Relation,
+  JoinColumn,
 } from 'typeorm';
 import { Driver } from '../drivers/drivers.entity';
 import { Passenger } from '../passengers/passengers.entity';
@@ -14,17 +15,25 @@ export class Trip {
   @PrimaryGeneratedColumn()
   public id!: number;
 
+  @Column()
+  public driverId!: number;
+
   @ManyToOne(() => Driver, (driver) => driver.trips)
+  @JoinColumn({ name: 'driverId' })
   public driver!: Relation<Driver>;
 
+  @Column()
+  public passengerId!: number;
+
   @ManyToOne(() => Passenger, (passenger) => passenger.trips)
+  @JoinColumn({ name: 'passengerId' })
   public passenger!: Relation<Passenger>;
 
   @CreateDateColumn()
   public startDate!: Date;
 
-  @Column()
-  public endDate!: Date;
+  @Column({ nullable: true })
+  public endDate?: Date;
 
   @Column({
     default: true,

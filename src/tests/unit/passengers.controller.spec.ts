@@ -9,6 +9,7 @@ import { Passenger } from '../../modules/passengers/passengers.entity';
 import { PassengersRepositoryMock } from '../mocks/passengers/passengers-repository.mock';
 import { faker } from '@faker-js/faker';
 import { PassengersMock } from '../mocks/passengers/passengers.mock';
+import { HttpStatus } from '@nestjs/common';
 
 describe('PassengersController', () => {
   let controller: PassengersController;
@@ -45,7 +46,7 @@ describe('PassengersController', () => {
       const result = await controller.create(createPassengerDto);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(201);
+      expect(result.statusCode).toEqual(HttpStatus.CREATED);
       expect(result.data).toMatchObject(passengerDto);
       expect(result.errorMessage).toBeUndefined();
     });
@@ -54,13 +55,13 @@ describe('PassengersController', () => {
       const createPassengerDto: CreatePassengerDto =
         PassengersMock.generateRandomCreatePassengerDto();
 
-      const errorMessage = 'An error occurred';
+      const errorMessage = 'An unknown error occurred';
       jest.spyOn(service, 'create').mockRejectedValue(new Error(errorMessage));
 
       const result = await controller.create(createPassengerDto);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(500);
+      expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
@@ -80,7 +81,7 @@ describe('PassengersController', () => {
       const result = await controller.getAll();
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(200);
+      expect(result.statusCode).toEqual(HttpStatus.OK);
       expect(result.data).toEqual({
         records: mockPassengers,
         totalRecords: mockPassengers.length,
@@ -95,7 +96,7 @@ describe('PassengersController', () => {
       const result = await controller.getAll();
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(500);
+      expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
@@ -112,7 +113,7 @@ describe('PassengersController', () => {
       const result = await controller.getById(passengerId);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(200);
+      expect(result.statusCode).toEqual(HttpStatus.OK);
       expect(result.data).toEqual(mockPassenger);
       expect(result.errorMessage).toBeUndefined();
     });
@@ -125,7 +126,7 @@ describe('PassengersController', () => {
       const result = await controller.getById(passengerId);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(404);
+      expect(result.statusCode).toEqual(HttpStatus.NOT_FOUND);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
@@ -140,7 +141,7 @@ describe('PassengersController', () => {
       const result = await controller.getById(passengerId);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(500);
+      expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });

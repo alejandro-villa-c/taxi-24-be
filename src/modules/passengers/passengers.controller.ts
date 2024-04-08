@@ -8,6 +8,7 @@ import {
   ValidationPipe,
   Param,
   ParseIntPipe,
+  HttpStatus,
 } from '@nestjs/common';
 import { PassengersService } from './passengers.service';
 import { PaginatedResponse } from '../../shared/paginated-response';
@@ -32,7 +33,7 @@ export class PassengersController {
   constructor(private readonly passengersService: PassengersService) {}
 
   @Post()
-  @HttpCode(201)
+  @HttpCode(HttpStatus.CREATED)
   @ApiOkResponse({
     schema: {
       allOf: [
@@ -44,7 +45,7 @@ export class PassengersController {
             },
             statusCode: {
               type: 'number',
-              default: 201,
+              default: HttpStatus.CREATED,
             },
             errorMessage: {
               type: 'string',
@@ -67,7 +68,7 @@ export class PassengersController {
             },
             statusCode: {
               type: 'number',
-              default: 400,
+              default: HttpStatus.BAD_REQUEST,
             },
             errorMessage: {
               type: 'string',
@@ -90,7 +91,7 @@ export class PassengersController {
             },
             statusCode: {
               type: 'number',
-              default: 500,
+              default: HttpStatus.INTERNAL_SERVER_ERROR,
             },
             errorMessage: {
               type: 'string',
@@ -107,16 +108,20 @@ export class PassengersController {
     try {
       const createdPassengerDto =
         await this.passengersService.create(createPassengerDto);
-      return new HttpResponse(createdPassengerDto, 201);
+      return new HttpResponse(createdPassengerDto, HttpStatus.CREATED);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(undefined, 500, errorMessage);
+      return new HttpResponse(
+        undefined,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        errorMessage,
+      );
     }
   }
 
   @Get()
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
   @ApiOkResponse({
@@ -140,7 +145,7 @@ export class PassengersController {
             },
             statusCode: {
               type: 'number',
-              default: 200,
+              default: HttpStatus.OK,
             },
             errorMessage: {
               type: 'string',
@@ -163,7 +168,7 @@ export class PassengersController {
             },
             statusCode: {
               type: 'number',
-              default: 400,
+              default: HttpStatus.BAD_REQUEST,
             },
             errorMessage: {
               type: 'string',
@@ -186,7 +191,7 @@ export class PassengersController {
             },
             statusCode: {
               type: 'number',
-              default: 500,
+              default: HttpStatus.INTERNAL_SERVER_ERROR,
             },
             errorMessage: {
               type: 'string',
@@ -205,25 +210,23 @@ export class PassengersController {
       const parsedPage = page ? parseInt(page, 10) : undefined;
       const parsedPerPage = perPage ? parseInt(perPage, 10) : undefined;
 
-      let paginatedResponse: PaginatedResponse<PassengerDto[]>;
-      if (!parsedPage || !parsedPerPage) {
-        paginatedResponse = await this.passengersService.findAll();
-      } else {
-        paginatedResponse = await this.passengersService.findAll(
-          parsedPage,
-          parsedPerPage,
-        );
-      }
-      return new HttpResponse(paginatedResponse, 200);
+      const paginatedResponse: PaginatedResponse<PassengerDto[]> =
+        await this.passengersService.findAll(parsedPage, parsedPerPage);
+
+      return new HttpResponse(paginatedResponse, HttpStatus.OK);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(undefined, 500, errorMessage);
+      return new HttpResponse(
+        undefined,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        errorMessage,
+      );
     }
   }
 
   @Get(':id')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     schema: {
       allOf: [
@@ -231,7 +234,7 @@ export class PassengersController {
         {
           properties: {
             data: { $ref: getSchemaPath(PassengerDto) },
-            statusCode: { type: 'number', default: 200 },
+            statusCode: { type: 'number', default: HttpStatus.OK },
             errorMessage: { type: 'string', nullable: true },
           },
         },
@@ -245,7 +248,7 @@ export class PassengersController {
         {
           properties: {
             data: { type: 'object', nullable: true },
-            statusCode: { type: 'number', default: 404 },
+            statusCode: { type: 'number', default: HttpStatus.NOT_FOUND },
             errorMessage: { type: 'string', default: 'Passenger not found' },
           },
         },
@@ -259,7 +262,10 @@ export class PassengersController {
         {
           properties: {
             data: { type: 'object', nullable: true },
-            statusCode: { type: 'number', default: 500 },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.INTERNAL_SERVER_ERROR,
+            },
             errorMessage: {
               type: 'string',
               default: 'An unknown error occurred',
@@ -275,11 +281,21 @@ export class PassengersController {
     try {
       const passenger = await this.passengersService.findById(id);
       if (!passenger) {
-        return new HttpResponse(undefined, 404, 'Passenger not found');
+        return new HttpResponse(
+          undefined,
+          HttpStatus.NOT_FOUND,
+          'Passenger not found',
+        );
       }
-      return new HttpResponse(passenger, 200);
+      return new HttpResponse(passenger, HttpStatus.OK);
     } catch (error) {
-      return new HttpResponse(undefined, 500, 'An unknown error occurred');
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unknown error occurred';
+      return new HttpResponse(
+        undefined,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        errorMessage,
+      );
     }
   }
 }

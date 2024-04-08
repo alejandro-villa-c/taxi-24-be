@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { AppModule } from '../../modules/app/app.module';
 import * as request from 'supertest';
 import { DriversMock } from '../mocks/drivers/drivers.mock';
 import { DriverDto } from '../../modules/drivers/dtos/driver.dto';
-import { CreateDriverDto } from '../../modules/drivers/dtos/create-driver.dto';
+import { EntityCreationHelpers } from '../helpers/entity-creation.helpers';
 
 describe('DriversController (E2E)', () => {
   let app: INestApplication;
@@ -24,7 +24,7 @@ describe('DriversController (E2E)', () => {
     const response = await request(app.getHttpServer())
       .post('/drivers')
       .send(createDriverDto)
-      .expect(201);
+      .expect(HttpStatus.CREATED);
 
     expect(response.body.data).toHaveProperty('id');
     expect(response.body.data.givenName).toEqual(createDriverDto.givenName);
@@ -38,11 +38,12 @@ describe('DriversController (E2E)', () => {
   });
 
   it('/drivers/:id (GET) - should return a specific driver', async () => {
-    const createdDriver: DriverDto = await createDriver(app);
+    const createdDriver: DriverDto =
+      await EntityCreationHelpers.createDriver(app);
 
     const response = await request(app.getHttpServer())
       .get(`/drivers/${createdDriver.id}`)
-      .expect(200);
+      .expect(HttpStatus.OK);
 
     expect(response.body.data).toBeDefined();
     expect(response.body.data.id).toEqual(createdDriver.id);
@@ -51,12 +52,12 @@ describe('DriversController (E2E)', () => {
   });
 
   it('/drivers (GET) - should return a list of drivers', async () => {
-    const driver1: DriverDto = await createDriver(app);
-    const driver2: DriverDto = await createDriver(app);
+    const driver1: DriverDto = await EntityCreationHelpers.createDriver(app);
+    const driver2: DriverDto = await EntityCreationHelpers.createDriver(app);
 
     const response = await request(app.getHttpServer())
       .get('/drivers')
-      .expect(200);
+      .expect(HttpStatus.OK);
 
     expect(Array.isArray(response.body.data.records)).toBe(true);
     expect(response.body.data.records).toContainEqual(driver1);
@@ -70,21 +71,23 @@ describe('DriversController (E2E)', () => {
     const latitudeOutside = 10.0;
     const longitudeOutside = 20.0;
 
-    const driverWithin = await createDriverWithSpecificCoordinates(
-      app,
-      latitudeWithin,
-      longitudeWithin,
-    );
-    const driverOutside = await createDriverWithSpecificCoordinates(
-      app,
-      latitudeOutside,
-      longitudeOutside,
-    );
+    const driverWithin =
+      await EntityCreationHelpers.createDriverWithSpecificCoordinates(
+        app,
+        latitudeWithin,
+        longitudeWithin,
+      );
+    const driverOutside =
+      await EntityCreationHelpers.createDriverWithSpecificCoordinates(
+        app,
+        latitudeOutside,
+        longitudeOutside,
+      );
 
     const response = await request(app.getHttpServer())
       .get(`/drivers/within/${distance}/km`)
       .query({ latitude: latitudeWithin, longitude: longitudeWithin })
-      .expect(200);
+      .expect(HttpStatus.OK);
 
     expect(Array.isArray(response.body.data)).toBe(true);
     expect(
@@ -103,34 +106,3 @@ describe('DriversController (E2E)', () => {
     await app.close();
   });
 });
-
-async function createDriver(app: INestApplication): Promise<DriverDto> {
-  const createDriverDto: CreateDriverDto =
-    DriversMock.generateRandomCreateDriverDto();
-
-  const response = await request(app.getHttpServer())
-    .post('/drivers')
-    .send(createDriverDto)
-    .expect(201);
-
-  return response.body.data;
-}
-
-async function createDriverWithSpecificCoordinates(
-  app: INestApplication,
-  latitude: number,
-  longitude: number,
-): Promise<DriverDto> {
-  const createDriverDto: CreateDriverDto =
-    DriversMock.generateRandomCreateDriverDtoWithSpecificCoordinates(
-      latitude,
-      longitude,
-    );
-
-  const response = await request(app.getHttpServer())
-    .post('/drivers')
-    .send(createDriverDto)
-    .expect(201);
-
-  return response.body.data;
-}

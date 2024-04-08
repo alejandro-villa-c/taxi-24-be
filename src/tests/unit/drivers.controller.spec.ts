@@ -10,6 +10,7 @@ import { Driver } from '../../modules/drivers/drivers.entity';
 import { DriversRepositoryMock } from '../mocks/drivers/drivers-repository.mock';
 import { faker } from '@faker-js/faker';
 import { GisUtils } from '../../utils/gis.utils';
+import { HttpStatus } from '@nestjs/common';
 
 describe('DriversController', () => {
   let controller: DriversController;
@@ -47,7 +48,7 @@ describe('DriversController', () => {
       const result = await controller.create(createDriverDto);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(201);
+      expect(result.statusCode).toEqual(HttpStatus.CREATED);
       expect(result.data).toMatchObject(driverDto);
       expect(result.errorMessage).toBeUndefined();
     });
@@ -56,13 +57,13 @@ describe('DriversController', () => {
       const createDriverDto: CreateDriverDto =
         DriversMock.generateRandomCreateDriverDto();
 
-      const errorMessage = 'An error occurred';
+      const errorMessage = 'An unknown error occurred';
       jest.spyOn(service, 'create').mockRejectedValue(new Error(errorMessage));
 
       const result = await controller.create(createDriverDto);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(500);
+      expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
@@ -80,7 +81,7 @@ describe('DriversController', () => {
       const result = await controller.getAll();
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(200);
+      expect(result.statusCode).toEqual(HttpStatus.OK);
       expect(result.data).toEqual({
         records: mockDrivers,
         totalRecords: mockDrivers.length,
@@ -95,7 +96,7 @@ describe('DriversController', () => {
       const result = await controller.getAll();
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(500);
+      expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
@@ -112,7 +113,7 @@ describe('DriversController', () => {
       const result = await controller.getById(driverId);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(200);
+      expect(result.statusCode).toEqual(HttpStatus.OK);
       expect(result.data).toEqual(mockDriver);
       expect(result.errorMessage).toBeUndefined();
     });
@@ -125,7 +126,7 @@ describe('DriversController', () => {
       const result = await controller.getById(driverId);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(404);
+      expect(result.statusCode).toEqual(HttpStatus.NOT_FOUND);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
@@ -140,7 +141,7 @@ describe('DriversController', () => {
       const result = await controller.getById(driverId);
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(500);
+      expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
@@ -172,7 +173,7 @@ describe('DriversController', () => {
       );
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(200);
+      expect(result.statusCode).toEqual(HttpStatus.OK);
       expect(result.data).toEqual(mockDrivers);
       expect(result.errorMessage).toBeUndefined();
     });
@@ -216,7 +217,7 @@ describe('DriversController', () => {
       );
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(200);
+      expect(result.statusCode).toEqual(HttpStatus.OK);
       expect(result.data).toEqual([]);
       expect(result.errorMessage).toBeUndefined();
     });
@@ -238,7 +239,7 @@ describe('DriversController', () => {
       );
 
       expect(result).toBeInstanceOf(HttpResponse);
-      expect(result.statusCode).toEqual(500);
+      expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
     });
