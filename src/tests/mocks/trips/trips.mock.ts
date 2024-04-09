@@ -11,10 +11,7 @@ export class TripsMock {
       faker.number.int(),
       faker.number.int(),
       startDate,
-      faker.date.between({
-        from: startDate,
-        to: faker.date.future(),
-      }),
+      undefined,
       true,
       faker.location.latitude(),
       faker.location.longitude(),

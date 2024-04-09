@@ -30,6 +30,27 @@ export class EntityCreationHelpers {
     return response.body.data;
   }
 
+  public static async createTripWithSpecificDriverId(
+    app: INestApplication,
+    driverId: number,
+  ): Promise<TripDto> {
+    const createdPassengerDto =
+      await EntityCreationHelpers.createPassenger(app);
+
+    const createTripDto: CreateTripDto =
+      TripsMock.generateRandomCreateTripDtoWithSpecificDriverIdAndPassengerId(
+        driverId,
+        createdPassengerDto.id,
+      );
+
+    const response = await request(app.getHttpServer())
+      .post('/trips')
+      .send(createTripDto)
+      .expect(HttpStatus.CREATED);
+
+    return response.body.data;
+  }
+
   public static async createPassenger(
     app: INestApplication,
   ): Promise<PassengerDto> {

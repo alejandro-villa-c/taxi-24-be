@@ -5,6 +5,7 @@ import * as request from 'supertest';
 import { DriversMock } from '../mocks/drivers/drivers.mock';
 import { DriverDto } from '../../modules/drivers/dtos/driver.dto';
 import { EntityCreationHelpers } from '../helpers/entity-creation.helpers';
+import { GisUtils } from '../../utils/gis.utils';
 
 describe('DriversController (E2E)', () => {
   let app: INestApplication;
@@ -64,19 +65,29 @@ describe('DriversController (E2E)', () => {
     expect(response.body.data.records).toContainEqual(driver2);
   });
 
-  it('/drivers/within/:distance/km (GET) - should return drivers within the specified distance', async () => {
+  it('/drivers/search (GET) - should return available drivers within the specified distance from a location', async () => {
     const distance = 3;
     const latitudeWithin = 1.23;
     const longitudeWithin = 4.56;
     const latitudeOutside = 10.0;
     const longitudeOutside = 20.0;
 
-    const driverWithin =
+    const driverWithinAndAvailable =
       await EntityCreationHelpers.createDriverWithSpecificCoordinates(
         app,
         latitudeWithin,
         longitudeWithin,
       );
+    const driverWithinAndNotAvailable =
+      await EntityCreationHelpers.createDriverWithSpecificCoordinates(
+        app,
+        latitudeWithin,
+        longitudeWithin,
+      );
+    await EntityCreationHelpers.createTripWithSpecificDriverId(
+      app,
+      driverWithinAndNotAvailable.id,
+    );
     const driverOutside =
       await EntityCreationHelpers.createDriverWithSpecificCoordinates(
         app,
@@ -85,21 +96,100 @@ describe('DriversController (E2E)', () => {
       );
 
     const response = await request(app.getHttpServer())
-      .get(`/drivers/within/${distance}/km`)
-      .query({ latitude: latitudeWithin, longitude: longitudeWithin })
+      .get(`/drivers/search`)
+      .query({
+        latitude: latitudeWithin,
+        longitude: longitudeWithin,
+        distance,
+        getAvailableDrivers: true,
+      })
       .expect(HttpStatus.OK);
 
-    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(Array.isArray(response.body.data.records)).toBe(true);
     expect(
-      response.body.data.some(
-        (driver: DriverDto) => driver.id === driverWithin.id,
+      response.body.data.records.some(
+        (driver: DriverDto) => driver.id === driverWithinAndAvailable.id,
       ),
     ).toBe(true);
     expect(
-      response.body.data.some(
+      response.body.data.records.some(
+        (driver: DriverDto) => driver.id === driverWithinAndNotAvailable.id,
+      ),
+    ).toBe(false);
+    expect(
+      response.body.data.records.some(
         (driver: DriverDto) => driver.id === driverOutside.id,
       ),
     ).toBe(false);
+  });
+
+  it('/drivers/search (GET) - should return the nearest drivers from a location', async () => {
+    const latitude = 0;
+    const longitude = 0;
+
+    const driver1: DriverDto = await EntityCreationHelpers.createDriver(app);
+    const driver2: DriverDto = await EntityCreationHelpers.createDriver(app);
+    const driver3: DriverDto = await EntityCreationHelpers.createDriver(app);
+    const driver4: DriverDto = await EntityCreationHelpers.createDriver(app);
+
+    const driversWithDistance = [
+      {
+        driver: driver1,
+        distance: GisUtils.getDistanceBetweenCoordinatesInKm(
+          latitude,
+          longitude,
+          driver1.latitude,
+          driver1.longitude,
+        ),
+      },
+      {
+        driver: driver2,
+        distance: GisUtils.getDistanceBetweenCoordinatesInKm(
+          latitude,
+          longitude,
+          driver2.latitude,
+          driver2.longitude,
+        ),
+      },
+      {
+        driver: driver3,
+        distance: GisUtils.getDistanceBetweenCoordinatesInKm(
+          latitude,
+          longitude,
+          driver3.latitude,
+          driver3.longitude,
+        ),
+      },
+      {
+        driver: driver4,
+        distance: GisUtils.getDistanceBetweenCoordinatesInKm(
+          latitude,
+          longitude,
+          driver4.latitude,
+          driver4.longitude,
+        ),
+      },
+    ];
+
+    driversWithDistance.sort((a, b) => a.distance - b.distance);
+
+    const expectedDrivers = driversWithDistance.map((item) => item.driver);
+
+    const response = await request(app.getHttpServer())
+      .get(`/drivers/search`)
+      .query({ latitude, longitude })
+      .expect(HttpStatus.OK);
+
+    const filteredResponseDrivers = response.body.data.records.filter(
+      (record: DriverDto) => {
+        return [driver1.id, driver2.id, driver3.id, driver4.id].includes(
+          record.id,
+        );
+      },
+    );
+
+    expect(Array.isArray(response.body.data.records)).toBe(true);
+    expect(filteredResponseDrivers).toEqual(expectedDrivers);
   });
 
   afterAll(async () => {

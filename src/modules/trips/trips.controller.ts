@@ -328,8 +328,8 @@ export class TripsController {
     @Query('perPage') perPage?: string,
   ): Promise<HttpResponse<PaginatedResponse<TripDto[]> | undefined>> {
     try {
-      const parsedPage = page ? parseInt(page, 10) : undefined;
-      const parsedPerPage = perPage ? parseInt(perPage, 10) : undefined;
+      const parsedPage = page ? Number(page) : undefined;
+      const parsedPerPage = perPage ? Number(perPage) : undefined;
 
       const paginatedResponse = await this.tripsService.findActiveTrips(
         parsedPage,

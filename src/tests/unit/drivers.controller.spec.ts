@@ -147,8 +147,8 @@ describe('DriversController', () => {
     });
   });
 
-  describe('getDriversWithinDistance', () => {
-    it('should return drivers within a specified distance', async () => {
+  describe('searchDrivers', () => {
+    it('should return drivers within the specified distance from a location', async () => {
       const distanceInKm = 3;
       const latitude = 40.7128;
       const longitude = -74.006;
@@ -162,19 +162,52 @@ describe('DriversController', () => {
         },
       ];
 
-      jest
-        .spyOn(service, 'findDriversWithinDistance')
-        .mockResolvedValue(mockDrivers);
+      jest.spyOn(service, 'searchDrivers').mockResolvedValue({
+        records: mockDrivers,
+        totalRecords: mockDrivers.length,
+      });
 
-      const result = await controller.getDriversWithinDistance(
-        distanceInKm,
+      const result = await controller.searchDrivers(
         latitude,
         longitude,
+        distanceInKm,
       );
 
       expect(result).toBeInstanceOf(HttpResponse);
       expect(result.statusCode).toEqual(HttpStatus.OK);
-      expect(result.data).toEqual(mockDrivers);
+      expect(result.data).toEqual({
+        records: mockDrivers,
+        totalRecords: mockDrivers.length,
+      });
+      expect(result.errorMessage).toBeUndefined();
+    });
+
+    it('should return the nearest drivers from a location', async () => {
+      const latitude = 40.7128;
+      const longitude = -74.006;
+      const mockDrivers: DriverDto[] = [
+        {
+          id: 1,
+          givenName: 'John',
+          familyName: 'Doe',
+          latitude: 40.7128,
+          longitude: -74.006,
+        },
+      ];
+
+      jest.spyOn(service, 'searchDrivers').mockResolvedValue({
+        records: mockDrivers,
+        totalRecords: mockDrivers.length,
+      });
+
+      const result = await controller.searchDrivers(latitude, longitude);
+
+      expect(result).toBeInstanceOf(HttpResponse);
+      expect(result.statusCode).toEqual(HttpStatus.OK);
+      expect(result.data).toEqual({
+        records: mockDrivers,
+        totalRecords: mockDrivers.length,
+      });
       expect(result.errorMessage).toBeUndefined();
     });
 
@@ -192,11 +225,13 @@ describe('DriversController', () => {
       const mockDrivers: DriverDto[] = [mockDriverFurther];
 
       jest
-        .spyOn(service, 'findDriversWithinDistance')
+        .spyOn(service, 'searchDrivers')
         .mockImplementation(
-          (distance: number, latitude: number, longitude: number) => {
-            return Promise.resolve(
-              mockDrivers.filter((mockDriver) => {
+          (latitude: number, longitude: number, distance?: number) => {
+            let records: DriverDto[] = [];
+
+            if (distance) {
+              records = mockDrivers.filter((mockDriver) => {
                 const mockDriverDistance =
                   GisUtils.getDistanceBetweenCoordinatesInKm(
                     latitude,
@@ -205,38 +240,42 @@ describe('DriversController', () => {
                     mockDriver.longitude,
                   );
                 return mockDriverDistance <= distance;
-              }),
-            );
+              });
+            }
+            const totalRecords = records.length;
+
+            return Promise.resolve({
+              records,
+              totalRecords,
+            });
           },
         );
 
-      const result = await controller.getDriversWithinDistance(
-        distanceInKm,
+      const result = await controller.searchDrivers(
         latitude,
         longitude,
+        distanceInKm,
       );
 
       expect(result).toBeInstanceOf(HttpResponse);
       expect(result.statusCode).toEqual(HttpStatus.OK);
-      expect(result.data).toEqual([]);
+      expect(result.data).toEqual({
+        records: [],
+        totalRecords: 0,
+      });
       expect(result.errorMessage).toBeUndefined();
     });
 
     it('should handle errors during retrieval', async () => {
-      const distanceInKm = 3;
       const latitude = 40.7128;
       const longitude = -74.006;
       const errorMessage = 'An unknown error occurred';
 
       jest
-        .spyOn(service, 'findDriversWithinDistance')
+        .spyOn(service, 'searchDrivers')
         .mockRejectedValue(new Error(errorMessage));
 
-      const result = await controller.getDriversWithinDistance(
-        distanceInKm,
-        latitude,
-        longitude,
-      );
+      const result = await controller.searchDrivers(latitude, longitude);
 
       expect(result).toBeInstanceOf(HttpResponse);
       expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);

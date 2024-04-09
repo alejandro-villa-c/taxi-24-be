@@ -11,12 +11,4 @@ export class DriversRepositoryMock extends Repository<Driver> {
   public find = jest.fn().mockResolvedValue([]);
 
   public findOne = jest.fn().mockResolvedValue(undefined);
-
-  public createQueryBuilder(): any {
-    return {
-      select: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockResolvedValue([]),
-    };
-  }
 }

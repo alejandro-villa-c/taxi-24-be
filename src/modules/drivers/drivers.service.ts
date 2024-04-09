@@ -80,36 +80,68 @@ export class DriversService {
     );
   }
 
-  public async findDriversWithinDistance(
-    distance: number,
+  public async searchDrivers(
     latitude: number,
     longitude: number,
-  ): Promise<DriverDto[]> {
-    const radiansLat = GisUtils.degreesToRadians(latitude);
-    const radiansLong = GisUtils.degreesToRadians(longitude);
+    distance?: number,
+    getAvailableDrivers?: boolean,
+    page?: number,
+    perPage?: number,
+  ): Promise<PaginatedResponse<DriverDto[]>> {
+    const radiansLatitude = GisUtils.degreesToRadians(latitude);
+    const radiansLongitude = GisUtils.degreesToRadians(longitude);
+    const getDriversDistanceQuery = `
+      ACOS(
+        SIN(RADIANS(driver.latitude)) * SIN(${radiansLatitude}) +
+        COS(RADIANS(driver.latitude)) * COS(${radiansLatitude}) *
+        COS(RADIANS(driver.longitude) - ${radiansLongitude})
+      ) * ${GisUtils.earthRadiusKm}
+    `;
 
-    const driversWithinDistance = await this.driversRepository
+    let selectQuery = this.driversRepository
       .createQueryBuilder('driver')
       .select()
-      .where(
-        `ACOS(
-          SIN( RADIANS(driver.latitude) ) * SIN( ${radiansLat} ) +
-          COS( RADIANS(driver.latitude) ) * COS( ${radiansLat} ) *
-          COS( RADIANS(driver.longitude) - ${radiansLong} )
-        ) * ${GisUtils.earthRadiusKm} <= ${distance}`,
-      )
-      .getMany();
+      .addSelect(getDriversDistanceQuery, 'distance');
 
-    const driverDtos: DriverDto[] = driversWithinDistance.map((driver) => {
+    if (getAvailableDrivers) {
+      selectQuery = selectQuery
+        .leftJoin('driver.trips', 'trip')
+        .groupBy('driver.id')
+        .having(
+          'COUNT(trip.id) = 0 OR SUM(CASE WHEN trip.isActive = true THEN 1 ELSE 0 END) = 0',
+        );
+    }
+
+    if (distance) {
+      selectQuery = selectQuery.andWhere(`
+          ${getDriversDistanceQuery} <= ${distance}
+        `);
+    }
+
+    selectQuery = selectQuery.orderBy('distance', 'ASC');
+
+    let records: Driver[];
+    let totalRecords: number;
+    if (page && perPage) {
+      [records, totalRecords] = await selectQuery
+        .skip((page - 1) * perPage)
+        .take(perPage)
+        .getManyAndCount();
+    } else {
+      records = await selectQuery.getMany();
+      totalRecords = records.length;
+    }
+
+    const driverDtos: DriverDto[] = records.map((record) => {
       return new DriverDto(
-        driver.id,
-        driver.givenName,
-        driver.familyName,
-        driver.latitude,
-        driver.longitude,
+        record.id,
+        record.givenName,
+        record.familyName,
+        record.latitude,
+        record.longitude,
       );
     });
 
-    return driverDtos;
+    return { records: driverDtos, totalRecords };
   }
 }

@@ -210,13 +210,135 @@ export class DriversController {
     @Query('perPage') perPage?: string,
   ): Promise<HttpResponse<PaginatedResponse<DriverDto[]> | undefined>> {
     try {
-      const parsedPage = page ? parseInt(page, 10) : undefined;
-      const parsedPerPage = perPage ? parseInt(perPage, 10) : undefined;
+      const parsedPage = page ? Number(page) : undefined;
+      const parsedPerPage = perPage ? Number(perPage) : undefined;
 
       const paginatedResponse: PaginatedResponse<DriverDto[]> =
         await this.driversService.findAll(parsedPage, parsedPerPage);
 
       return new HttpResponse(paginatedResponse, HttpStatus.OK);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unknown error occurred';
+      return new HttpResponse(
+        undefined,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        errorMessage,
+      );
+    }
+  }
+
+  @Get('/search')
+  @HttpCode(HttpStatus.OK)
+  @ApiQuery({ name: 'distance', required: false })
+  @ApiQuery({ name: 'getAvailableDrivers', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'perPage', required: false })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'object',
+              $ref: getSchemaPath(PaginatedResponse),
+              properties: {
+                records: {
+                  type: 'array',
+                  items: { $ref: getSchemaPath(DriverDto) },
+                },
+                totalRecords: {
+                  type: 'number',
+                },
+              },
+            },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.OK,
+            },
+            errorMessage: {
+              type: 'string',
+              nullable: true,
+            },
+          },
+        },
+      ],
+    },
+  })
+  @ApiBadRequestResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'array',
+              nullable: true,
+            },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.BAD_REQUEST,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'Bad Request',
+            },
+          },
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(HttpResponse) },
+        {
+          properties: {
+            data: {
+              type: 'array',
+              nullable: true,
+            },
+            statusCode: {
+              type: 'number',
+              default: HttpStatus.INTERNAL_SERVER_ERROR,
+            },
+            errorMessage: {
+              type: 'string',
+              default: 'An unknown error occurred',
+            },
+          },
+        },
+      ],
+    },
+  })
+  public async searchDrivers(
+    @Query('latitude', ParseFloatPipe) latitude: number,
+    @Query('longitude', ParseFloatPipe) longitude: number,
+    @Query('distance') distance?: number,
+    @Query('getAvailableDrivers') getAvailableDrivers?: boolean,
+    @Query('page') page?: string,
+    @Query('perPage') perPage?: string,
+  ): Promise<HttpResponse<PaginatedResponse<DriverDto[]> | undefined>> {
+    try {
+      const parsedPage = page ? Number(page) : undefined;
+      const parsedPerPage = perPage ? Number(perPage) : undefined;
+      const parsedDistance = distance ? Number(distance) : undefined;
+      const parsedGetAvailableDrivers =
+        getAvailableDrivers && String(getAvailableDrivers) === 'true'
+          ? true
+          : false;
+
+      const drivers = await this.driversService.searchDrivers(
+        latitude,
+        longitude,
+        parsedDistance,
+        parsedGetAvailableDrivers,
+        parsedPage,
+        parsedPerPage,
+      );
+      return new HttpResponse(drivers, HttpStatus.OK);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred';
@@ -291,101 +413,6 @@ export class DriversController {
         );
       }
       return new HttpResponse(driver, HttpStatus.OK);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'An unknown error occurred';
-      return new HttpResponse(
-        undefined,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        errorMessage,
-      );
-    }
-  }
-
-  @Get('/within/:distance/km')
-  @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ transform: true }))
-  @ApiOkResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: {
-              type: 'array',
-              items: { $ref: getSchemaPath(DriverDto) },
-            },
-            statusCode: {
-              type: 'number',
-              default: HttpStatus.OK,
-            },
-            errorMessage: {
-              type: 'string',
-              nullable: true,
-            },
-          },
-        },
-      ],
-    },
-  })
-  @ApiBadRequestResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: {
-              type: 'array',
-              nullable: true,
-            },
-            statusCode: {
-              type: 'number',
-              default: HttpStatus.BAD_REQUEST,
-            },
-            errorMessage: {
-              type: 'string',
-              default: 'Bad Request',
-            },
-          },
-        },
-      ],
-    },
-  })
-  @ApiInternalServerErrorResponse({
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(HttpResponse) },
-        {
-          properties: {
-            data: {
-              type: 'array',
-              nullable: true,
-            },
-            statusCode: {
-              type: 'number',
-              default: HttpStatus.INTERNAL_SERVER_ERROR,
-            },
-            errorMessage: {
-              type: 'string',
-              default: 'An unknown error occurred',
-            },
-          },
-        },
-      ],
-    },
-  })
-  public async getDriversWithinDistance(
-    @Param('distance', ParseIntPipe) distance: number,
-    @Query('latitude', ParseFloatPipe) latitude: number,
-    @Query('longitude', ParseFloatPipe) longitude: number,
-  ): Promise<HttpResponse<DriverDto[] | undefined>> {
-    try {
-      const drivers = await this.driversService.findDriversWithinDistance(
-        distance,
-        latitude,
-        longitude,
-      );
-      return new HttpResponse(drivers, HttpStatus.OK);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred';

@@ -207,8 +207,8 @@ export class PassengersController {
     @Query('perPage') perPage?: string,
   ): Promise<HttpResponse<PaginatedResponse<PassengerDto[]> | undefined>> {
     try {
-      const parsedPage = page ? parseInt(page, 10) : undefined;
-      const parsedPerPage = perPage ? parseInt(perPage, 10) : undefined;
+      const parsedPage = page ? Number(page) : undefined;
+      const parsedPerPage = perPage ? Number(perPage) : undefined;
 
       const paginatedResponse: PaginatedResponse<PassengerDto[]> =
         await this.passengersService.findAll(parsedPage, parsedPerPage);
