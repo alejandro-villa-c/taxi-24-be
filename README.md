@@ -110,3 +110,17 @@ El proyecto estará corriendo en [http://localhost:3000/](http://localhost:3000/
 ## Documentación de endpoints
 
 Puede ver la documentación de los endpoints con Swagger en [http://localhost:3000/api/](http://localhost:3000/api/)
+
+## Pruebas
+
+Ejecutar pruebas unitarias.
+
+```sh
+npm run test
+```
+
+Ejecutar pruebas e2e.
+
+```sh
+npm run test:e2e
+```
