@@ -62,6 +62,8 @@ Inicializar los contenedores.
 docker-compose up
 ```
 
+El proyecto estará corriendo en [http://localhost:3000/](http://localhost:3000/)
+
 ### Sin Docker
 
 [Instalar Node.js Versión 20.3.1](https://nodejs.org/dist/v20.3.1/node-v20.3.1-x64.msi)
