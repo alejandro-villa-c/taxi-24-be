@@ -1,73 +1,110 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Taxi24 API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Instrucciones
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Taxi24 es una nueva startup que quiere revolucionar la industria del transporte proporcionando 
+una solución de marca blanca existentes. Prácticamente, construirán un conjunto de APIs que otras compañías puedan utilizar para gestionar su flota de pasajeros. Les gustaría que les ayudaras a construir estas APIs.
 
-## Description
+### Limitaciones tecnológicas
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+• En la fábrica digital, actualmente tenemos una arquitectura de microservicios con servicios 
+escritos  en su mayoría en frameworks para microservicios.
 
-## Installation
+• Un único servicio en el lenguaje Node JS que exponga varios endpoints REST (ver página 
+siguiente). Preferentemente NestJS y typescript.
 
-```bash
-$ npm install
+• Puedes usar la base de datos que quieras (recomendamos usar Postgres o en MongoDB).
+
+• Deberá incluir un archivo README que contenga instrucciones para que podamos ejecutar 
+la solución en nuestras máquinas.
+
+## Tecnologías utilizadas
+
+* [NestJS](https://nestjs.com/)
+* [TypeORM](https://typeorm.io/)
+* [TypeScript](https://www.typescriptlang.org/)
+* [PostgreSQL](https://www.postgresql.org/)
+* [Git](https://git-scm.com/)
+* [Docker](https://www.docker.com/)
+
+## Requerimientos cumplidos
+
+* Utilización de tecnologías solicitadas.
+* Uso de patrones conocidos para el desarrollo de REST.
+* Modelo de datos claro.
+* Creación de Endpoints solicitados.
+* Instrucciones en archivo README para la ejecución de la solución en las máquinas del evaluador.
+* Cumplimiento de los requerimientos dentro de la fecha límite (< 1 semana).
+
+## Requerimientos adicionales cumplidos
+
+* Pruebas unitarias.
+* Pruebas E2E.
+* Principios de Clean Architecture (Separación de Intereses, Principio de Inversión de Dependencias, Principio de Responsabilidad Única, Abstracción, etc.).
+* Implementación de migraciones de base de datos para la creación del modelo de base de datos inicial y fácil actualización de este.
+* Endpoints adicionales para la creación de registros.
+* Endpoint adicional para generación de archivo PDF con el contenido de la factura después de completado un viaje.
+* Documentación de los Endpoints utilizando la librería Swagger.
+* Estructura escalable de directorios del proyecto para mejorar la facilidad de comprensión del código.
+* Dockerización del proyecto.
+
+## Ejecución de la solución
+
+### Con Docker
+
+[Instalar Docker](https://www.docker.com/products/docker-desktop/)
+
+Entrar al directorio base del proyecto.
+
+Inicializar los contenedores.
+
+```sh
+docker-compose up
 ```
 
-## Running the app
+### Sin Docker
 
-```bash
-# development
-$ npm run start
+[Instalar Node.js Versión 20.3.1](https://nodejs.org/dist/v20.3.1/node-v20.3.1-x64.msi)
 
-# watch mode
-$ npm run start:dev
+Instalar NPM Versión 10.5.1
 
-# production mode
-$ npm run start:prod
+```sh
+npm install npm@10.5.1 -g
 ```
 
-## Test
+Entrar al directorio base del proyecto.
 
-```bash
-# unit tests
-$ npm run test
+Crear archivo `.env` con las credenciales de su base de datos en PostgreSQL. Puede utilizar el archivo `.env.example` como ejemplo. Debe tener una base de datos llamada 'taxi-24-db' creada.
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```yaml
+# Database
+DB_HOST=""
+DB_PORT=""
+DB_USERNAME=""
+DB_PASSWORD=""
+DB_DATABASE="taxi-24-db"
 ```
 
-## Support
+Instalar dependencias del proyecto.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```sh
+npm install
+```
 
-## Stay in touch
+Actualizar la base de datos a partir de las migraciones.
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```sh
+npm run update-database
+```
 
-## License
+Inicializar el proyecto.
 
-Nest is [MIT licensed](LICENSE).
+```sh
+npm start
+```
+
+El proyecto estará corriendo en [http://localhost:3000/](http://localhost:3000/)
+
+## Documentación de endpoints
+
+Puede ver la documentación de los endpoints con Swagger en [http://localhost:3000/api/](http://localhost:3000/api/)
