@@ -11,36 +11,15 @@ import { CreateDriverDto } from '../../modules/drivers/dtos/create-driver.dto';
 import { DriversMock } from '../mocks/drivers/drivers.mock';
 
 export class EntityCreationHelpers {
-  public static async createTrip(app: INestApplication): Promise<TripDto> {
-    const createdDriverDto = await EntityCreationHelpers.createDriver(app);
-    const createdPassengerDto =
-      await EntityCreationHelpers.createPassenger(app);
-
-    const createTripDto: CreateTripDto =
-      TripsMock.generateRandomCreateTripDtoWithSpecificDriverIdAndPassengerId(
-        createdDriverDto.id,
-        createdPassengerDto.id,
-      );
-
-    const response = await request(app.getHttpServer())
-      .post('/trips')
-      .send(createTripDto)
-      .expect(HttpStatus.CREATED);
-
-    return response.body.data;
-  }
-
-  public static async createTripWithSpecificDriverId(
+  public static async createTrip(
     app: INestApplication,
     driverId: number,
+    passengerId: number,
   ): Promise<TripDto> {
-    const createdPassengerDto =
-      await EntityCreationHelpers.createPassenger(app);
-
     const createTripDto: CreateTripDto =
       TripsMock.generateRandomCreateTripDtoWithSpecificDriverIdAndPassengerId(
         driverId,
-        createdPassengerDto.id,
+        passengerId,
       );
 
     const response = await request(app.getHttpServer())

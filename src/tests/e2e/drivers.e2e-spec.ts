@@ -6,15 +6,21 @@ import { DriversMock } from '../mocks/drivers/drivers.mock';
 import { DriverDto } from '../../modules/drivers/dtos/driver.dto';
 import { EntityCreationHelpers } from '../helpers/entity-creation.helpers';
 import { GisUtils } from '../../utils/gis.utils';
+import { EntityRemovalHelpers } from '../helpers/entity-removal.helpers';
+import { Driver } from '../../modules/drivers/drivers.entity';
+import { Trip } from '../../modules/trips/trips.entity';
+import { Passenger } from '../../modules/passengers/passengers.entity';
 
 describe('DriversController (E2E)', () => {
   let app: INestApplication;
+  let entityRemovalHelpers: EntityRemovalHelpers;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
+    entityRemovalHelpers = new EntityRemovalHelpers(moduleFixture);
     app = moduleFixture.createNestApplication();
     await app.init();
   });
@@ -26,6 +32,8 @@ describe('DriversController (E2E)', () => {
       .post('/drivers')
       .send(createDriverDto)
       .expect(HttpStatus.CREATED);
+
+    await entityRemovalHelpers.removeEntity(Driver, response.body.data.id);
 
     expect(response.body.data).toHaveProperty('id');
     expect(response.body.data.givenName).toEqual(createDriverDto.givenName);
@@ -46,6 +54,8 @@ describe('DriversController (E2E)', () => {
       .get(`/drivers/${createdDriver.id}`)
       .expect(HttpStatus.OK);
 
+    await entityRemovalHelpers.removeEntity(Driver, createdDriver.id);
+
     expect(response.body.data).toBeDefined();
     expect(response.body.data.id).toEqual(createdDriver.id);
     expect(response.body.data.givenName).toEqual(createdDriver.givenName);
@@ -59,6 +69,9 @@ describe('DriversController (E2E)', () => {
     const response = await request(app.getHttpServer())
       .get('/drivers')
       .expect(HttpStatus.OK);
+
+    await entityRemovalHelpers.removeEntity(Driver, driver1.id);
+    await entityRemovalHelpers.removeEntity(Driver, driver2.id);
 
     expect(Array.isArray(response.body.data.records)).toBe(true);
     expect(response.body.data.records).toContainEqual(driver1);
@@ -78,16 +91,20 @@ describe('DriversController (E2E)', () => {
         latitudeWithin,
         longitudeWithin,
       );
+
     const driverWithinAndNotAvailable =
       await EntityCreationHelpers.createDriverWithSpecificCoordinates(
         app,
         latitudeWithin,
         longitudeWithin,
       );
-    await EntityCreationHelpers.createTripWithSpecificDriverId(
+    const createdPassenger = await EntityCreationHelpers.createPassenger(app);
+    const driverNotAvailableTrip = await EntityCreationHelpers.createTrip(
       app,
       driverWithinAndNotAvailable.id,
+      createdPassenger.id,
     );
+
     const driverOutside =
       await EntityCreationHelpers.createDriverWithSpecificCoordinates(
         app,
@@ -104,6 +121,18 @@ describe('DriversController (E2E)', () => {
         getAvailableDrivers: true,
       })
       .expect(HttpStatus.OK);
+
+    await entityRemovalHelpers.removeEntity(
+      Driver,
+      driverWithinAndAvailable.id,
+    );
+    await entityRemovalHelpers.removeEntity(Trip, driverNotAvailableTrip.id);
+    await entityRemovalHelpers.removeEntity(Passenger, createdPassenger.id);
+    await entityRemovalHelpers.removeEntity(
+      Driver,
+      driverWithinAndNotAvailable.id,
+    );
+    await entityRemovalHelpers.removeEntity(Driver, driverOutside.id);
 
     expect(Array.isArray(response.body.data.records)).toBe(true);
     expect(
@@ -187,6 +216,11 @@ describe('DriversController (E2E)', () => {
         );
       },
     );
+
+    await entityRemovalHelpers.removeEntity(Driver, driver1.id);
+    await entityRemovalHelpers.removeEntity(Driver, driver2.id);
+    await entityRemovalHelpers.removeEntity(Driver, driver3.id);
+    await entityRemovalHelpers.removeEntity(Driver, driver4.id);
 
     expect(Array.isArray(response.body.data.records)).toBe(true);
     expect(filteredResponseDrivers).toEqual(expectedDrivers);

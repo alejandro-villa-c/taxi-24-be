@@ -206,7 +206,7 @@ export class TripsService {
         \n
         Total: ${tripDto.priceCurrency} ${NumberUtils.formatPrice(tripDto.price)}.
         \n
-        Distancia recorrida: ${NumberUtils.formatNumber(tripDto.distance!)} KM.
+        Distancia recorrida: ${NumberUtils.formatNumber(tripDto.distance!)} km.
         \n
         Viajaste con ${tripDto.driverGivenName}.
       `);
