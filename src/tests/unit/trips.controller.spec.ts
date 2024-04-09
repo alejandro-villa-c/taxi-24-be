@@ -11,6 +11,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Trip } from '../../modules/trips/trips.entity';
 import { TripsRepositoryMock } from '../mocks/trips/trips-repository.mock';
 import { faker } from '@faker-js/faker';
+import { Response } from 'express';
 
 describe('TripsController', () => {
   let controller: TripsController;
@@ -183,6 +184,77 @@ describe('TripsController', () => {
       expect(result.statusCode).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(result.data).toBeUndefined();
       expect(result.errorMessage).toEqual(errorMessage);
+    });
+  });
+
+  describe('getCompletedTripBill', () => {
+    it('should return completed trip bill', async () => {
+      const tripId = faker.number.int();
+      const tripDto: TripDto =
+        TripsMock.generateRandomCompletedTripDtoWithSpecificId(tripId);
+
+      jest.spyOn(service, 'findById').mockResolvedValue(tripDto);
+      jest
+        .spyOn(service, 'generateBillPdf')
+        .mockResolvedValue(Buffer.from('PDF Buffer'));
+
+      const res = {
+        setHeader: jest.fn(),
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      await controller.getCompletedTripBill(tripId, res);
+
+      expect(service.findById).toHaveBeenCalledWith(tripId);
+      expect(service.generateBillPdf).toHaveBeenCalledWith(tripDto);
+      expect(res.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/pdf',
+      );
+      expect(res.setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        `attachment; filename="taxi24-viaje-${tripId}-factura.pdf"`,
+      );
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(res.send).toHaveBeenCalledWith(Buffer.from('PDF Buffer'));
+    });
+
+    it('should handle trip not found', async () => {
+      const tripId = faker.number.int();
+
+      jest.spyOn(service, 'findById').mockResolvedValue(undefined);
+
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      await controller.getCompletedTripBill(tripId, res);
+
+      expect(service.findById).toHaveBeenCalledWith(tripId);
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
+      expect(res.send).toHaveBeenCalledWith({ errorMessage: 'Trip not found' });
+    });
+
+    it('should handle internal server error', async () => {
+      const tripId = faker.number.int();
+      const errorMessage = 'An unknown error occurred';
+
+      jest
+        .spyOn(service, 'findById')
+        .mockRejectedValue(new Error(errorMessage));
+
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      await controller.getCompletedTripBill(tripId, res);
+
+      expect(service.findById).toHaveBeenCalledWith(tripId);
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(res.send).toHaveBeenCalledWith({ errorMessage });
     });
   });
 });

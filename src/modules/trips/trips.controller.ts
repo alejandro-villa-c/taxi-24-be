@@ -10,6 +10,7 @@ import {
   Get,
   Query,
   NotFoundException,
+  Res,
 } from '@nestjs/common';
 import { TripsService } from './trips.service';
 import { CreateTripDto } from './dtos/create-trip.dto';
@@ -27,6 +28,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { PaginatedResponse } from '../../shared/paginated-response';
+import { Response } from 'express';
 
 @ApiTags('Trips')
 @ApiExtraModels(HttpResponse, PaginatedResponse, TripDto)
@@ -224,8 +226,8 @@ export class TripsController {
     @Param('id') id: number,
   ): Promise<HttpResponse<TripDto | undefined>> {
     try {
-      const createdTripDto = await this.tripsService.completeTrip(id);
-      return new HttpResponse(createdTripDto, HttpStatus.OK);
+      const completedTripDto = await this.tripsService.completeTrip(id);
+      return new HttpResponse(completedTripDto, HttpStatus.OK);
     } catch (error) {
       if (error instanceof NotFoundException) {
         return new HttpResponse(undefined, HttpStatus.NOT_FOUND, error.message);
@@ -345,6 +347,63 @@ export class TripsController {
         HttpStatus.INTERNAL_SERVER_ERROR,
         errorMessage,
       );
+    }
+  }
+
+  @Get('completed/:id/bill')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    content: {
+      'application/pdf': {},
+    },
+    schema: {
+      type: 'string',
+      format: 'binary',
+    },
+  })
+  @ApiNotFoundResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        errorMessage: { type: 'string', default: 'Trip not found' },
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        errorMessage: { type: 'string', default: 'An unknown error occurred' },
+      },
+    },
+  })
+  public async getCompletedTripBill(
+    @Param('id') id: number,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const trip = await this.tripsService.findById(id);
+      if (!trip) {
+        throw new NotFoundException('Trip not found');
+      }
+
+      const pdfBuffer = await this.tripsService.generateBillPdf(trip);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="taxi24-viaje-${trip.id}-factura.pdf"`,
+      );
+
+      res.status(HttpStatus.OK).send(pdfBuffer);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        res.status(HttpStatus.NOT_FOUND).send({ errorMessage: error.message });
+      } else {
+        const errorMessage =
+          error instanceof Error ? error.message : 'An unknown error occurred';
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ errorMessage });
+      }
     }
   }
 }

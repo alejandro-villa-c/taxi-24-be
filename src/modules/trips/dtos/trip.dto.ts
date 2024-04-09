@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { GisUtils } from '../../../utils/gis.utils';
 
 export class TripDto {
   @ApiProperty()
@@ -8,7 +9,13 @@ export class TripDto {
   public driverId: number;
 
   @ApiProperty()
+  public driverGivenName?: string;
+
+  @ApiProperty()
   public passengerId: number;
+
+  @ApiProperty()
+  public passengerGivenName?: string;
 
   @ApiProperty()
   public startDate: Date;
@@ -32,6 +39,9 @@ export class TripDto {
   public endLongitude: number;
 
   @ApiProperty()
+  public distance?: number;
+
+  @ApiProperty()
   public price: number;
 
   @ApiProperty()
@@ -40,7 +50,9 @@ export class TripDto {
   constructor(
     id: number,
     driverId: number,
+    driverGivenName: string | undefined,
     passengerId: number,
+    passengerGivenName: string | undefined,
     startDate: Date,
     endDate: Date | undefined,
     isActive: boolean,
@@ -53,7 +65,9 @@ export class TripDto {
   ) {
     this.id = id;
     this.driverId = driverId;
+    this.driverGivenName = driverGivenName;
     this.passengerId = passengerId;
+    this.passengerGivenName = passengerGivenName;
     this.startDate = startDate;
     this.endDate = endDate;
     this.isActive = isActive;
@@ -61,6 +75,12 @@ export class TripDto {
     this.startLongitude = startLongitude;
     this.endLatitude = endLatitude;
     this.endLongitude = endLongitude;
+    this.distance = GisUtils.getDistanceBetweenCoordinatesInKm(
+      startLatitude,
+      startLongitude,
+      endLatitude,
+      endLongitude,
+    );
     this.price = price;
     this.priceCurrency = priceCurrency;
   }

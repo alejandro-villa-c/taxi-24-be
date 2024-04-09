@@ -9,6 +9,8 @@ import { Trip } from './trips.entity';
 import { CreateTripDto } from './dtos/create-trip.dto';
 import { TripDto } from './dtos/trip.dto';
 import { PaginatedResponse } from '../../shared/paginated-response';
+import * as PDFDocument from 'pdfkit';
+import { NumberUtils } from '../../utils/number.utils';
 
 @Injectable()
 export class TripsService {
@@ -57,7 +59,9 @@ export class TripsService {
     return new TripDto(
       createdTrip.id,
       createdTrip.driverId,
+      undefined,
       createdTrip.passengerId,
+      undefined,
       createdTrip.startDate,
       createdTrip.endDate,
       createdTrip.isActive,
@@ -83,20 +87,22 @@ export class TripsService {
     trip.endDate = new Date();
     trip.isActive = false;
 
-    const createdTrip = await this.tripsRepository.save(trip);
+    const completedTrip = await this.tripsRepository.save(trip);
     return new TripDto(
-      createdTrip.id,
-      createdTrip.driverId,
-      createdTrip.passengerId,
-      createdTrip.startDate,
-      createdTrip.endDate,
-      createdTrip.isActive,
-      createdTrip.startLatitude,
-      createdTrip.startLongitude,
-      createdTrip.endLatitude,
-      createdTrip.endLongitude,
-      createdTrip.price,
-      createdTrip.priceCurrency,
+      completedTrip.id,
+      completedTrip.driverId,
+      undefined,
+      completedTrip.passengerId,
+      undefined,
+      completedTrip.startDate,
+      completedTrip.endDate,
+      completedTrip.isActive,
+      completedTrip.startLatitude,
+      completedTrip.startLongitude,
+      completedTrip.endLatitude,
+      completedTrip.endLongitude,
+      completedTrip.price,
+      completedTrip.priceCurrency,
     );
   }
 
@@ -126,7 +132,9 @@ export class TripsService {
       return new TripDto(
         record.id,
         record.driverId,
+        undefined,
         record.passengerId,
+        undefined,
         record.startDate,
         record.endDate,
         record.isActive,
@@ -139,5 +147,71 @@ export class TripsService {
       );
     });
     return { records: tripDtos, totalRecords };
+  }
+
+  public async findById(id: number): Promise<TripDto | undefined> {
+    const trip = await this.tripsRepository.findOne({
+      where: {
+        id,
+        isActive: false,
+      },
+      relations: {
+        driver: true,
+        passenger: true,
+      },
+    });
+    if (!trip) {
+      return undefined;
+    }
+    return new TripDto(
+      trip.id,
+      trip.driverId,
+      trip.driver.givenName,
+      trip.passengerId,
+      trip.passenger.givenName,
+      trip.startDate,
+      trip.endDate,
+      trip.isActive,
+      trip.startLatitude,
+      trip.startLongitude,
+      trip.endLatitude,
+      trip.endLongitude,
+      trip.price,
+      trip.priceCurrency,
+    );
+  }
+
+  public async generateBillPdf(tripDto: TripDto): Promise<Buffer> {
+    return new Promise((resolve) => {
+      const pdfDocument = new PDFDocument();
+      const chunks: Uint8Array[] = [];
+
+      pdfDocument.on('data', (chunk: Uint8Array) => {
+        chunks.push(chunk);
+      });
+
+      pdfDocument.on('end', () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        resolve(pdfBuffer);
+      });
+
+      pdfDocument.text(`
+        Factura de tu viaje con Taxi24.
+        \n
+        Gracias por viajar con nosotros, ${tripDto.passengerGivenName}.
+        \n
+        Fecha inicial: ${new Date(tripDto.startDate).toLocaleString('es-DO')}
+        \n
+        Fecha final: ${new Date(tripDto.endDate!).toLocaleString('es-DO')}
+        \n
+        Total: ${tripDto.priceCurrency} ${NumberUtils.formatPrice(tripDto.price)}.
+        \n
+        Distancia recorrida: ${NumberUtils.formatNumber(tripDto.distance!)} KM.
+        \n
+        Viajaste con ${tripDto.driverGivenName}.
+      `);
+
+      pdfDocument.end();
+    });
   }
 }

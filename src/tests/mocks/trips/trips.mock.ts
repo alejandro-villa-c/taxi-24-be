@@ -4,15 +4,36 @@ import { CreateTripDto } from '../../../modules/trips/dtos/create-trip.dto';
 
 export class TripsMock {
   public static generateRandomTripDto(): TripDto {
-    const startDate = faker.date.anytime();
-
     return new TripDto(
       faker.number.int(),
       faker.number.int(),
+      faker.person.firstName(),
       faker.number.int(),
-      startDate,
+      faker.person.lastName(),
+      faker.date.anytime(),
       undefined,
       true,
+      faker.location.latitude(),
+      faker.location.longitude(),
+      faker.location.latitude(),
+      faker.location.longitude(),
+      Number(faker.finance.amount()),
+      'DOP',
+    );
+  }
+
+  public static generateRandomCompletedTripDtoWithSpecificId(
+    tripId: number,
+  ): TripDto {
+    return new TripDto(
+      tripId,
+      faker.number.int(),
+      faker.person.firstName(),
+      faker.number.int(),
+      faker.person.lastName(),
+      faker.date.anytime(),
+      faker.date.anytime(),
+      false,
       faker.location.latitude(),
       faker.location.longitude(),
       faker.location.latitude(),

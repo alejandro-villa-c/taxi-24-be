@@ -99,6 +99,24 @@ describe('TripsController (E2E)', () => {
     expect(response.body.data.records).toContainEqual(trip2);
   });
 
+  it('/trips/completed/:id/bill (GET) - should return the bill for a specific completed trip', async () => {
+    const createdTrip: TripDto = await EntityCreationHelpers.createTrip(app);
+
+    const completedTrip = await request(app.getHttpServer())
+      .post(`/trips/${createdTrip.id}/complete`)
+      .expect(HttpStatus.OK);
+
+    const response = await request(app.getHttpServer())
+      .get(`/trips/completed/${completedTrip.body.data.id}/bill`)
+      .expect(HttpStatus.OK);
+
+    expect(response.header['content-type']).toBe('application/pdf');
+    expect(response.header['content-disposition']).toMatch(
+      /attachment; filename="taxi24-viaje-\d+-factura.pdf"/,
+    );
+    expect(response.body.length).toBeGreaterThan(0);
+  });
+
   afterAll(async () => {
     await app.close();
   });
